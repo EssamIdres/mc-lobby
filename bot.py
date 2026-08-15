@@ -190,7 +190,19 @@ def status_line(repo):
 
 
 def cmd_start(args):
-    repo = args[0].strip().lower() if args else PRIMARY
+    # No arg: restart ALL servers with a fresh 6h timer (keeps them in sync)
+    if not args:
+        restarted = []
+        for repo in REPOS:
+            r = latest_run(repo)
+            if r and r.get("status") == "in_progress":
+                cancel_run(repo, r["id"])
+            time.sleep(1)
+            dispatch(repo)
+            restarted.append(repo)
+        send(f"Restarting all servers (fresh 6h timer): {', '.join(restarted)}")
+        return
+    repo = args[0].strip().lower()
     if repo not in REPOS:
         send(f"Unknown server '{repo}'. Options: {', '.join(REPOS)}")
         return
@@ -230,8 +242,8 @@ def cmd_address(args):
 def cmd_help(args):
     send(
         "Commands:\n"
-        "/start [server]  - start a server (default lobby)\n"
-        "/stop [server]   - stop a server\n"
+        "/start [server]  - restart ALL servers (fresh 6h) or one server\n"
+        "/stop [server]   - stop a server (lobby = whole network)\n"
         "/status          - status + time left of all servers\n"
         "/console [srv] <cmd> - send a command to a server console (default lobby)\n"
         "/address         - join address + server list\n"
