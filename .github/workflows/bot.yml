@@ -23,3 +23,4 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           BOT_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BOT_PAT: ${{ secrets.PAT_TOKEN }}
+          BOT_ADDRESS: "mauritania-catching.tun.ply.gg:25565"

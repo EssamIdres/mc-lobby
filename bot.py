@@ -39,6 +39,7 @@ PRIMARY = CFG["primary"]
 INTERVAL = CFG["interval_hours"] * 3600
 RUN_SECONDS = CFG["run_minutes"] * 60
 
+ADDRESS = os.environ.get("BOT_ADDRESS", "mauritania-catching.tun.ply.gg:25565")
 API = f"https://api.telegram.org/bot{TOKEN}"
 
 
@@ -140,13 +141,18 @@ def gh_delete(path):
 
 def cmd_console(args):
     repo = PRIMARY
+    target = "lobby"
+    if args and args[0].lower() in REPOS:
+        target = args[0].lower()
+        args = args[1:]
     if not args:
-        send("Usage: /console <command>  (e.g. /console time set day)")
+        send("Usage: /console [server] <command>  (e.g. /console survival time set day)")
         return
     cmd = " ".join(args)
     if len(cmd) > 400:
         send("Command too long (max 400 chars).")
         return
+    repo = target
     path = f"/repos/{OWNER}/{repo}/contents/console-cmd.txt"
     existing = gh("GET", path)
     sha = existing.get("sha")
@@ -217,13 +223,18 @@ def cmd_status(args):
     send("\n".join(lines))
 
 
+def cmd_address(args):
+    send(f"Join address (Velocity proxy):\n{ADDRESS}\n\nServers: lobby, survival, minigames, creative\nIn-game: /server <name>")
+
+
 def cmd_help(args):
     send(
         "Commands:\n"
         "/start [server]  - start a server (default lobby)\n"
         "/stop [server]   - stop a server\n"
         "/status          - status + time left of all servers\n"
-        "/console <cmd>   - send a command to the lobby console\n"
+        "/console [srv] <cmd> - send a command to a server console (default lobby)\n"
+        "/address         - join address + server list\n"
         "/help            - this message"
     )
 
@@ -233,6 +244,7 @@ COMMANDS = {
     "stop": cmd_stop,
     "status": cmd_status,
     "console": cmd_console,
+    "address": cmd_address,
     "help": cmd_help,
 }
 
