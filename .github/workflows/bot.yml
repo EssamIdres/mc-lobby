@@ -1,0 +1,25 @@
+name: mc-bot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 */5 * * *'
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Telegram bot (auto-restarts every ~5h)
+        run: python bot.py
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BOT_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BOT_PAT: ${{ secrets.PAT_TOKEN }}
