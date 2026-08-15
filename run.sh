@@ -67,7 +67,7 @@ prevent-client-proxy-connections = false
 player-info-forwarding-mode = "modern"
 forwarding-secret-file = "forwarding.secret"
 announce-forge = false
-kick-existing-players = true
+kick-existing-players = false
 ping-passthrough = "DISABLED"
 enable-player-address-logging = true
 
