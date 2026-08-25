@@ -1,0 +1,20 @@
+# CustomBlockGUI Config
+# Paper 1.21.1
+
+# Visual block for custom block
+custom-block-material: SMITHING_TABLE
+
+# GUI titles
+gui:
+  main-title: "Custom Machine - Menu"
+  storage-title: "Custom Storage - 27 Slots"
+
+# Messages
+messages:
+  give: "§a✓ Received Custom Machine x%amount%"
+  place: "§a✓ Custom Block placed! Right-click to open GUI."
+  break: "§c✗ Custom Block broken!"
+  storage-saved: "§a✓ Storage saved!"
+
+# Storage size (always 27 for now)
+storage-size: 27

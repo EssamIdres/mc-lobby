@@ -1,0 +1,28 @@
+name: CustomBlockGUI
+version: '1.0.0'
+main: com.customblocks.CustomBlockPlugin
+api-version: '1.21'
+author: CustomBlocks
+description: Custom Block with Custom GUI - Place and interact to open GUI
+prefix: CustomBlock
+
+commands:
+  givecustomblock:
+    description: Give yourself the custom block
+    usage: /<command> [player] [amount]
+    permission: customblock.give
+    permission-message: You don't have permission!
+  customblock:
+    description: Main command
+    usage: /<command>
+    aliases: [cb]
+
+permissions:
+  customblock.give:
+    description: Allow giving custom block
+    default: op
+  customblock.*:
+    description: All permissions
+    default: op
+    children:
+      customblock.give: true
