@@ -151,16 +151,25 @@ else
   echo "==> No backups found — generating a fresh world."
 fi
 
+# Debug plugins before restore
+echo "==> Plugins BEFORE restore:"
+ls -lh plugins/ 2>&1 | head -30
 # Re-build CustomBlockGUI after restore (restore may have overwritten with old backup) + ensure Oraxen/ProtocolLib present
 if [ -f plugin-src/CustomBlockGUI/pom.xml ]; then
   echo "==> Re-building CustomBlockGUI after restore (ensure latest)..."
-  (cd plugin-src/CustomBlockGUI && mvn -B package -DskipTests 2>&1 | tail -5 && mkdir -p ../../plugins && cp -f target/CustomBlockGUI-*.jar ../../plugins/ && ls -lh ../../plugins/CustomBlockGUI*.jar)
+  (cd plugin-src/CustomBlockGUI && mvn -B package -DskipTests 2>&1 | tail -20 && mkdir -p ../../plugins && cp -f target/CustomBlockGUI-*.jar ../../plugins/ && ls -lh ../../plugins/CustomBlockGUI*.jar && echo "Rebuild success")
 else
   echo "==> plugin-src not found, skipping rebuild"
 fi
 # Restore Oraxen pack & settings from repo (restore overwrote with old backup without DiscoveryLab textures)
 echo "==> Restoring Oraxen pack from repo (for texture-only)..."
 git checkout -- plugins/Oraxen/settings.yml plugins/Oraxen/pack/ 2>&1 | head -20 || echo "git checkout Oraxen failed, trying restore"
+echo "==> Plugins AFTER restore+rebuild:"
+ls -lh plugins/ 2>&1 | head -30
+echo "==> Plugins folder contents (detailed):"
+ls -lh plugins/*.jar 2>&1 | head -20
+# Also check for paper remapped plugins
+ls -lh .paper-remapped/ 2>&1 | head -20 || echo "no paper-remapped yet"
 # Ensure DiscoveryLab assets are in Oraxen pack (if missing, copy from repo zip)
 if [ ! -f plugins/Oraxen/pack/assets/minecraft/models/item/smithing_table.json ]; then
   echo "==> Oraxen smithing_table.json missing, copying from DiscoveryLab pack..."
