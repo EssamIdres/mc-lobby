@@ -1,0 +1,104 @@
+name: upload-pack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rclone
+        run: |
+          curl -fsSL -o /tmp/rclone.zip https://downloads.rclone.org/rclone-current-linux-amd64.zip
+          cd /tmp && unzip -o rclone.zip
+          sudo cp /tmp/rclone-*/rclone /usr/local/bin/rclone
+          rclone version
+
+      - name: Setup rclone config
+        run: |
+          mkdir -p ~/.config/rclone
+          echo '${{ secrets.RCLONE_CONFIG }}' > ~/.config/rclone/rclone.conf
+          cat ~/.config/rclone/rclone.conf | head -5
+
+      - name: Upload pack to Drive and get link
+        run: |
+          ls -lh DiscoveryLab-pack-1.21.1.zip
+          sha1sum DiscoveryLab-pack-1.21.1.zip
+          echo "==> Uploading to Drive mcworlds:minecraft/resource-packs/"
+          rclone copy DiscoveryLab-pack-1.21.1.zip mcworlds:minecraft/resource-packs/ --progress
+          echo "==> Listing"
+          rclone lsf mcworlds:minecraft/resource-packs/ 2>&1 | tail -20
+          echo "==> Getting shareable link"
+          # Try rclone link
+          LINK=$(rclone link mcworlds:minecraft/resource-packs/DiscoveryLab-pack-1.21.1.zip 2>&1 | tail -1)
+          echo "Raw link: $LINK"
+          # Also try to make public via rclone? For Drive, rclone link should give shareable
+          # Extract FILE_ID if drive link
+          echo "$LINK" > pack_link.txt
+          cat pack_link.txt
+          # Also try to get direct download via drive id
+          # Use rclone to get id via lsf --format
+          rclone lsf mcworlds:minecraft/resource-packs/ --format "p" 2>&1 | head -5
+          # Set as output
+          echo "link=$LINK" >> $GITHUB_OUTPUT
+          # Save for artifact
+          echo "$LINK" > /tmp/link.txt
+        id: upload
+
+      - name: Update server.properties with Drive link if found
+        run: |
+          LINK=$(cat pack_link.txt)
+          echo "Link: $LINK"
+          # Try to extract file id for direct download
+          if echo "$LINK" | grep -q "drive.google.com"; then
+            ID=$(echo "$LINK" | grep -oE '[a-zA-Z0-9_-]{25,}' | tail -1)
+            echo "File ID: $ID"
+            DIRECT="https://drive.google.com/uc?export=download&id=$ID"
+            echo "Direct: $DIRECT"
+            echo "$DIRECT" > drive_direct.txt
+            # Update server.properties
+            sed -i "s|resource-pack=.*|resource-pack=$DIRECT|" server.properties
+            SHA=$(sha1sum DiscoveryLab-pack-1.21.1.zip | awk '{print $1}')
+            sed -i "s|resource-pack-sha1=.*|resource-pack-sha1=$SHA|" server.properties
+            cat server.properties | grep resource-pack
+            # Commit back? We'll do via API in next step
+            echo "direct=$DIRECT" >> $GITHUB_OUTPUT
+          else
+            echo "No drive link, keeping jsDelivr"
+          fi
+        id: update
+
+      - name: Commit server.properties if updated
+        run: |
+          if [ -f drive_direct.txt ]; then
+            DIRECT=$(cat drive_direct.txt)
+            git config user.email "bot@mc-lobby"
+            git config user.name "Pack Bot"
+            git add server.properties
+            git diff --cached --stat
+            git commit -m "Switch resource-pack to Drive direct link $DIRECT" || echo "no changes"
+            git push origin main || echo "push failed"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+      - name: Telegram notify link
+        if: always()
+        run: |
+          LINK=$(cat pack_link.txt 2>/dev/null || echo "no link")
+          DIRECT=$(cat drive_direct.txt 2>/dev/null || echo "$LINK")
+          MSG="Pack uploaded to Drive%0ALink: $LINK%0ADirect: $DIRECT%0ASHA1: $(sha1sum DiscoveryLab-pack-1.21.1.zip | awk '{print $1}')"
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "${{ secrets.TELEGRAM_CHAT_ID }}" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" -d text="$MSG" | head -c 500
+            echo "sent to Telegram"
+          else
+            echo "$MSG"
+          fi
+
+      - name: Show final
+        run: |
+          cat pack_link.txt 2>&1 | head -5
+          cat server.properties | grep resource-pack
+          ls -lh DiscoveryLab-pack-1.21.1.zip
