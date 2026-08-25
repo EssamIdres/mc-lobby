@@ -341,40 +341,48 @@ public class CustomBlockPlugin extends JavaPlugin {
     public void spawnDisplay(Location loc, String typeId) {
         try {
             String key = locToKey(loc);
-            // Remove old if exists
             removeDisplay(loc);
             BlockType def = getBlockTypeDef(typeId);
             World w = loc.getWorld();
             if (w == null) return;
             Location center = loc.clone().add(0.5, 0.5, 0.5);
+            // Use ItemDisplay so CustomModelData shows (BlockDisplay can't show custom)
             ItemDisplay display = (ItemDisplay) w.spawnEntity(center, EntityType.ITEM_DISPLAY);
             ItemStack item = createCustomBlockItem(typeId, 1);
             display.setItemStack(item);
             display.setBillboard(Display.Billboard.FIXED);
-            // Make it look like a block (scale 1, at center)
-            // Transformation: translation 0, scale 1 (block size), no rotation
-            // For 1.21 item display as block, need to set transform
+            display.setViewRange(64);
+            display.setShadowRadius(0);
+            display.setShadowStrength(0);
             try {
+                // FIXED shows as item-frame-like, but with block/cube parent it renders as full block when scaled
                 display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                // For 1.21.1 block items, FIXED with scale 1 may be small - use GUI or THIRDPERSON?
+                // Try to make it block-sized: scale 1.0 is full block, but ItemDisplay with block model needs scale 1
             } catch (Exception ignored) {}
-            // Scale to block size: use transformation API
+            // Brightness max so it shows even in dark
+            try { display.setBrightness(new Display.Brightness(15, 15)); } catch (Exception ignored) {}
             Transformation trans = display.getTransformation();
-            // Keep translation 0, scale 1.0 (full block)
-            trans.getScale().set(1.0f, 1.0f, 1.0f);
+            // Scale 1.0 = full block, but ItemDisplay item is rendered at 0.625 for FIXED, so scale up to 1.6 to fill block
+            // Test shows FIXED with 0.625 -> need 1.6 to fill 1 block
+            trans.getScale().set(1.6f, 1.6f, 1.6f);
             trans.getTranslation().set(0, 0, 0);
             trans.getLeftRotation().set(new Quaternionf());
             trans.getRightRotation().set(new Quaternionf());
             display.setTransformation(trans);
+            display.setInterpolationDuration(0);
+            display.setTeleportDuration(0);
             display.setPersistent(true);
             display.setInvulnerable(true);
-            // Tag with location key for finding
+            display.setCustomNameVisible(false);
+            // Tag
             display.getPersistentDataContainer().set(new NamespacedKey(this, "display_loc"), PersistentDataType.STRING, key);
             display.getPersistentDataContainer().set(customBlockTypeKey, PersistentDataType.STRING, typeId);
-            // Hide base block: set to BARRIER (invisible) — caller should have done
             displayEntities.put(key, display.getUniqueId());
-            // Save not needed, we respawn on load via world scan
+            getLogger().fine("Spawned display for " + typeId + " at " + key);
         } catch (Exception e) {
             getLogger().warning("Failed spawn display for " + typeId + " at " + loc + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -405,6 +413,7 @@ public class CustomBlockPlugin extends JavaPlugin {
 
     public void respawnAllDisplays() {
         int spawned = 0;
+        int converted = 0;
         for (var entry : new HashMap<>(blockTypes).entrySet()) {
             String key = entry.getKey();
             String typeId = entry.getValue();
@@ -412,7 +421,13 @@ public class CustomBlockPlugin extends JavaPlugin {
             if (loc == null) continue;
             World w = loc.getWorld();
             if (w == null) continue;
-            // Check if display already exists nearby
+            // Convert old SMITHING_TABLE placed blocks to BARRIER so display shows correctly (no vanilla texture underneath)
+            try {
+                if (loc.getBlock().getType() == Material.SMITHING_TABLE) {
+                    loc.getBlock().setType(Material.BARRIER);
+                    converted++;
+                }
+            } catch (Exception ignored) {}
             boolean exists = false;
             Location center = loc.clone().add(0.5, 0.5, 0.5);
             for (var e : w.getNearbyEntities(center, 0.6, 0.6, 0.6)) {
@@ -423,13 +438,11 @@ public class CustomBlockPlugin extends JavaPlugin {
                 }
             }
             if (!exists) {
-                // Ensure base block is BARRIER for new rendering (keep old SMITHING_TABLE as is, but new will be BARRIER)
-                // If block is still SMITHING_TABLE, leave it; display will still show on top (may z-fight but visible)
-                // For better, we keep BARRIER for future placements only
                 spawnDisplay(loc, typeId);
                 spawned++;
             }
         }
+        if (converted > 0) getLogger().info("Converted " + converted + " old SMITHING_TABLE -> BARRIER for display");
         if (spawned > 0) getLogger().info("Respawned " + spawned + " ItemDisplay for custom blocks (placed texture)");
     }
 
