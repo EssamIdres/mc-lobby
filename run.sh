@@ -272,11 +272,13 @@ while kill -0 $SERVER_PID 2>/dev/null; do
   rclone copy "$BDIR" "$DRIVE_ROOT/backups/$TS" 2>&1 | tail -3 || true
   rm -rf "$BDIR"
 
-  # Prune: keep only the newest $BACKUP_KEEP dirs on Drive
+  # Prune: keep only the newest $BACKUP_KEEP dirs on Drive (PERMANENT delete, not trash)
   for d in $(rclone lsf "$DRIVE_ROOT/backups" --dirs-only 2>/dev/null | sort -r | tail -n +$((BACKUP_KEEP+1))); do
-    echo "==> Pruning old backup: $d"
-    rclone purge "$DRIVE_ROOT/backups/$d" 2>&1 | tail -1 || true
+    echo "==> Pruning old backup: $d (permanent, not trash)"
+    rclone purge "$DRIVE_ROOT/backups/$d" --drive-use-trash=false 2>&1 | tail -1 || true
   done
+  # Also empty Drive trash to free storage (old backups were trashed, not deleted)
+  rclone cleanup "mcworlds:" --drive-use-trash=false 2>&1 | tail -1 || echo "cleanup: no trash or already empty"
 done
 
 echo "==> Server stopped. Final log:"
