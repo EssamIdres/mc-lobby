@@ -392,8 +392,8 @@ public class CustomBlockPlugin extends JavaPlugin {
             // Brightness max so it shows even in dark
             try { display.setBrightness(new Display.Brightness(15, 15)); } catch (Exception ignored) {}
             Transformation trans = display.getTransformation();
-            // Was 1.6 half size - use 2.0 per user (was 2.5 big)
-            trans.getScale().set(2.0f, 2.0f, 2.0f);
+            // 2.2 per user feedback (2.5 big, 2.0 small, 2.2 good)
+            trans.getScale().set(2.2f, 2.2f, 2.2f);
             trans.getTranslation().set(0, 0, 0);
             // Rotation based on stored yaw
             float rot = blockRotations.getOrDefault(key, 0f);

@@ -158,6 +158,49 @@ if [ -f plugin-src/CustomBlockGUI/pom.xml ]; then
 else
   echo "==> plugin-src not found, skipping rebuild"
 fi
+# Restore Oraxen pack & settings from repo (restore overwrote with old backup without DiscoveryLab textures)
+echo "==> Restoring Oraxen pack from repo (for texture-only)..."
+git checkout -- plugins/Oraxen/settings.yml plugins/Oraxen/pack/ 2>&1 | head -20 || echo "git checkout Oraxen failed, trying restore"
+# Ensure DiscoveryLab assets are in Oraxen pack (if missing, copy from repo zip)
+if [ ! -f plugins/Oraxen/pack/assets/minecraft/models/item/smithing_table.json ]; then
+  echo "==> Oraxen smithing_table.json missing, copying from DiscoveryLab pack..."
+  mkdir -p plugins/Oraxen/pack/assets/minecraft/models/item
+  unzip -o -q DiscoveryLab-pack-1.21.1.zip -d /tmp/oraxen_restore 2>&1 | head -5 || true
+  # Actually DiscoveryLab-pack-1.21.1.zip is at repo root, contains DiscoveryLab-pack folder
+  if [ -d /tmp/oraxen_restore/DiscoveryLab-pack/assets ]; then
+    cp -r /tmp/oraxen_restore/DiscoveryLab-pack/assets/minecraft/* plugins/Oraxen/pack/assets/minecraft/ 2>&1 | head -10
+  fi
+  # Also ensure our custom smithing_table.json with 15 overrides is there
+  if [ ! -f plugins/Oraxen/pack/assets/minecraft/models/item/smithing_table.json ]; then
+    echo "==> Creating smithing_table.json for 15 machines..."
+    mkdir -p plugins/Oraxen/pack/assets/minecraft/models/item
+    cat > plugins/Oraxen/pack/assets/minecraft/models/item/smithing_table.json <<'JSON'
+{
+  "parent": "item/generated",
+  "textures": {"layer0": "item/smithing_table"},
+  "overrides": [
+    {"predicate": {"custom_model_data": 1001}, "model": "block/altar"},
+    {"predicate": {"custom_model_data": 1002}, "model": "block/autocrafter"},
+    {"predicate": {"custom_model_data": 1003}, "model": "block/belt_machine"},
+    {"predicate": {"custom_model_data": 1004}, "model": "block/crusher"},
+    {"predicate": {"custom_model_data": 1005}, "model": "block/drill"},
+    {"predicate": {"custom_model_data": 1006}, "model": "block/druglab"},
+    {"predicate": {"custom_model_data": 1007}, "model": "block/generator"},
+    {"predicate": {"custom_model_data": 1008}, "model": "block/packaging"},
+    {"predicate": {"custom_model_data": 1009}, "model": "block/pipe"},
+    {"predicate": {"custom_model_data": 1010}, "model": "block/press"},
+    {"predicate": {"custom_model_data": 1011}, "model": "block/sorter"},
+    {"predicate": {"custom_model_data": 1012}, "model": "block/spawnercore"},
+    {"predicate": {"custom_model_data": 1013}, "model": "block/splitter"},
+    {"predicate": {"custom_model_data": 1014}, "model": "block/totem_machine"},
+    {"predicate": {"custom_model_data": 1015}, "model": "block/copper_forge"}
+  ]
+}
+JSON
+  fi
+fi
+ls -lh plugins/Oraxen/pack/assets/minecraft/models/item/smithing_table.json 2>&1 | head -5
+ls -lh plugins/Oraxen/settings.yml 2>&1 | head -5
 # Ensure Oraxen and ProtocolLib from repo are present (rclone copy doesn't delete, but ensure)
 if [ ! -f plugins/Oraxen.jar ]; then echo "==> WARNING Oraxen.jar missing after restore!"; ls -lh plugins/ | head -20; fi
 if [ ! -f plugins/ProtocolLib.jar ]; then echo "==> WARNING ProtocolLib.jar missing after restore!"; fi

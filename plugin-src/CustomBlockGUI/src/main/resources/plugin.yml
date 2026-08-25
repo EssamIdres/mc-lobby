@@ -1,9 +1,9 @@
 name: CustomBlockGUI
-version: '1.3.3'
+version: '1.3.4'
 main: com.customblocks.CustomBlockPlugin
 api-version: '1.21'
 author: CustomBlocks
-description: Scale 2.0 per user (was 2.5 big, 1.6 half) - placed full block
+description: Scale 2.2 per user (was 2.5 big, 1.6 half) - placed full block
 prefix: CustomBlock
 
 commands:
