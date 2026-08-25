@@ -170,6 +170,11 @@ ls -lh plugins/ 2>&1 | head -30
 if [ -f plugin-src/CustomBlockGUI/pom.xml ]; then
   echo "==> Re-building CustomBlockGUI after restore (ensure latest)..."
   (cd plugin-src/CustomBlockGUI && mvn -B package -DskipTests 2>&1 | tail -20 && mkdir -p ../../plugins && cp -f target/CustomBlockGUI-*.jar ../../plugins/ && ls -lh ../../plugins/CustomBlockGUI*.jar && echo "Rebuild success")
+  echo "==> Cleaning old CustomBlockGUI jars (keep only 1.3.5)..."
+  ls plugins/CustomBlockGUI-*.jar 2>&1 | head -20
+  rm -f plugins/CustomBlockGUI-1.2.0.jar plugins/CustomBlockGUI-1.3.0.jar plugins/CustomBlockGUI-1.3.1.jar plugins/CustomBlockGUI-1.3.2.jar plugins/CustomBlockGUI-1.3.3.jar plugins/CustomBlockGUI-1.3.4.jar 2>&1 | head -5 || true
+  ls -lh plugins/CustomBlockGUI*.jar 2>&1 | head -10
+  echo "Cleaned old jars"
 else
   echo "==> plugin-src not found, skipping rebuild"
 fi
