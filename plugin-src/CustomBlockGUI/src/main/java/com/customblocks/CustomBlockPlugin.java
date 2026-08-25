@@ -94,8 +94,13 @@ public class CustomBlockPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("customblock")).setExecutor(giveCommand);
         Objects.requireNonNull(getCommand("customblock")).setTabCompleter(giveCommand);
 
-        getLogger().info("CustomBlockGUI v1.1.0 enabled! " + BLOCK_TYPES.size() + " custom blocks: " + String.join(", ", BLOCK_TYPES.keySet()));
-        getLogger().info("Use /givecustomblock <type> or /givecustomblock help | Textures via DiscoveryLab-pack (new way, no Oraxen)");
+        // Register 15 shaped recipes (DiscoveryLab - survival craftable)
+        registerRecipes();
+
+        getLogger().info("CustomBlockGUI v1.2.0 enabled! " + BLOCK_TYPES.size() + " custom blocks: " + String.join(", ", BLOCK_TYPES.keySet()));
+        getLogger().info("Use /givecustomblock <type> or /givecustomblock * | Textures via DiscoveryLab-pack (new way, no Oraxen)");
+        getLogger().info("Recipes registered for all 15 machines - craft in survival!");
+        getLogger().info("Per-block GUI features: crusher, drill, generator, etc. - shift+block to place, no vanilla smithing GUI");
     }
 
     @Override
@@ -316,5 +321,58 @@ public class CustomBlockPlugin extends JavaPlugin {
 
     public ItemStack[] getStorage(String key) {
         return blockStorages.getOrDefault(key, new ItemStack[27]);
+    }
+
+    // === RECIPES (15 DiscoveryLab machines) ===
+    private void registerRecipes() {
+        // Altar: Stone + Gold + Totem
+        addRecipe("altar", "SSS", "G G", "GTG", Map.of('S', Material.STONE, 'G', Material.GOLD_INGOT, 'T', Material.TOTEM_OF_UNDYING));
+        // Autocrafter: Iron + Redstone + Crafting Table
+        addRecipe("autocrafter", "IRI", "RCR", "IRI", Map.of('I', Material.IRON_INGOT, 'R', Material.REDSTONE, 'C', Material.CRAFTING_TABLE));
+        // Belt Machine: Iron + Leather + Redstone
+        addRecipe("belt_machine", "LLL", "IRI", "R R", Map.of('L', Material.LEATHER, 'I', Material.IRON_INGOT, 'R', Material.REDSTONE));
+        addRecipe("belt", "LLL", "IRI", "R R", Map.of('L', Material.LEATHER, 'I', Material.IRON_INGOT, 'R', Material.REDSTONE));
+        // Crusher: Iron Block + Piston + Furnace
+        addRecipe("crusher", "III", "PFP", "III", Map.of('I', Material.IRON_BLOCK, 'P', Material.PISTON, 'F', Material.FURNACE));
+        // Drill: Iron + Diamond + Redstone Block
+        addRecipe("drill", "IDI", "IRI", "RBR", Map.of('I', Material.IRON_INGOT, 'D', Material.DIAMOND, 'R', Material.REDSTONE, 'B', Material.REDSTONE_BLOCK));
+        // Drug Lab: Glass + Blaze + Brewing Stand
+        addRecipe("druglab", "GGG", "B B", "S S", Map.of('G', Material.GLASS, 'B', Material.BLAZE_POWDER, 'S', Material.BREWING_STAND));
+        // Generator: Furnace + Redstone + Coal Block
+        addRecipe("generator", "FFF", "RCR", "FFF", Map.of('F', Material.FURNACE, 'R', Material.REDSTONE, 'C', Material.COAL_BLOCK));
+        // Packaging: Paper + Iron + Chest
+        addRecipe("packaging", "PPP", "ICI", "PPP", Map.of('P', Material.PAPER, 'I', Material.IRON_INGOT, 'C', Material.CHEST));
+        // Pipe: Iron + Glass
+        addRecipe("pipe", "IGI", "IGI", "IGI", Map.of('I', Material.IRON_INGOT, 'G', Material.GLASS));
+        // Press: Iron Block + Anvil + Piston
+        addRecipe("press", "III", "APA", "IPI", Map.of('I', Material.IRON_BLOCK, 'A', Material.ANVIL, 'P', Material.PISTON));
+        // Sorter: Hopper + Comparator + Chest
+        addRecipe("sorter", "HCH", "RCR", "HCH", Map.of('H', Material.HOPPER, 'C', Material.COMPARATOR, 'R', Material.REDSTONE));
+        // Spawner Core: Iron Bars + Nether Star + Spawner (use trial spawner)
+        addRecipe("spawnercore", "BBB", "BNC", "BBB", Map.of('B', Material.IRON_BARS, 'N', Material.NETHER_STAR, 'C', Material.TRIAL_SPAWNER));
+        // Splitter: Iron + Redstone + Belt
+        addRecipe("splitter", "IRI", "B B", "IRI", Map.of('I', Material.IRON_INGOT, 'R', Material.REDSTONE, 'B', Material.LEATHER));
+        // Totem Machine: Obsidian + Emerald + Altar (use altar item as ingredient via gold block proxy)
+        addRecipe("totem_machine", "OEO", "EAE", "OEO", Map.of('O', Material.OBSIDIAN, 'E', Material.EMERALD, 'A', Material.GOLD_BLOCK));
+        // Copper Forge: Copper + Brick + Furnace
+        addRecipe("copper_forge", "CCC", "BFB", "CCC", Map.of('C', Material.COPPER_INGOT, 'B', Material.BRICKS, 'F', Material.FURNACE));
+
+        getLogger().info("Registered " + 16 + " recipes for DiscoveryLab machines");
+    }
+
+    private void addRecipe(String typeId, String row1, String row2, String row3, Map<Character, Material> ing) {
+        try {
+            BlockType type = getBlockTypeDef(typeId);
+            ItemStack result = createCustomBlockItem(typeId, 1);
+            NamespacedKey key = new NamespacedKey(this, "recipe_" + typeId);
+            org.bukkit.inventory.ShapedRecipe recipe = new org.bukkit.inventory.ShapedRecipe(key, result);
+            recipe.shape(row1, row2, row3);
+            for (var e : ing.entrySet()) recipe.setIngredient(e.getKey(), e.getValue());
+            // Avoid duplicate
+            try { getServer().removeRecipe(key); } catch (Exception ignored) {}
+            getServer().addRecipe(recipe);
+        } catch (Exception e) {
+            getLogger().warning("Failed recipe for " + typeId + ": " + e.getMessage());
+        }
     }
 }

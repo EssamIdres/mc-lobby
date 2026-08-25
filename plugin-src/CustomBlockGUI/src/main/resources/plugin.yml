@@ -1,9 +1,9 @@
 name: CustomBlockGUI
-version: '1.1.0'
+version: '1.2.0'
 main: com.customblocks.CustomBlockPlugin
 api-version: '1.21'
 author: CustomBlocks
-description: DiscoveryLab multi-texture custom blocks with GUI - new way no Oraxen (15 textures via CustomModelData 1001-1015)
+description: DiscoveryLab 15 machines with recipes + per-block GUI (crusher/drill/generator) - new way no Oraxen CMD 1001-1015
 prefix: CustomBlock
 
 commands:

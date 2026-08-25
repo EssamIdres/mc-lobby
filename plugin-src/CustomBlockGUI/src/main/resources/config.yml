@@ -1,31 +1,31 @@
-# CustomBlockGUI v1.1.0 - DiscoveryLab multi-texture (new way, no Oraxen)
-# Each block below has different texture via CustomModelData 1001-1015
-# Resource pack: DiscoveryLab-pack (assets/minecraft/models/block/*.json)
-# Install pack as server resource-pack or Velocity
+# CustomBlockGUI v1.2.0 - DiscoveryLab 15 machines (new way, no Oraxen)
+# Recipes + per-block GUI features, different texture per CMD
+# Resource pack: DiscoveryLab-pack-1.21.1.zip (smithing_table CMD 1001-1015)
 
 custom-blocks:
-  altar: { material: SMITHING_TABLE, cmd: 1001, name: "Altar" }
-  autocrafter: { material: SMITHING_TABLE, cmd: 1002, name: "Autocrafter" }
-  belt_machine: { material: SMITHING_TABLE, cmd: 1003, name: "Belt Machine" }
-  crusher: { material: SMITHING_TABLE, cmd: 1004, name: "Crusher" }
-  drill: { material: SMITHING_TABLE, cmd: 1005, name: "Drill" }
-  druglab: { material: SMITHING_TABLE, cmd: 1006, name: "Drug Lab" }
-  generator: { material: SMITHING_TABLE, cmd: 1007, name: "Generator" }
-  packaging: { material: SMITHING_TABLE, cmd: 1008, name: "Packaging" }
-  pipe: { material: SMITHING_TABLE, cmd: 1009, name: "Pipe" }
-  press: { material: SMITHING_TABLE, cmd: 1010, name: "Press" }
-  sorter: { material: SMITHING_TABLE, cmd: 1011, name: "Sorter" }
-  spawnercore: { material: SMITHING_TABLE, cmd: 1012, name: "Spawner Core" }
-  splitter: { material: SMITHING_TABLE, cmd: 1013, name: "Splitter" }
-  totem_machine: { material: SMITHING_TABLE, cmd: 1014, name: "Totem Machine" }
-  copper_forge: { material: SMITHING_TABLE, cmd: 1015, name: "Copper Forge" }
+  altar: { material: SMITHING_TABLE, cmd: 1001, name: "Altar", recipe: "SSS/G G/GTG (S=STONE,G=GOLD_INGOT,T=TOTEM)", feature: "Craft totem" }
+  autocrafter: { material: SMITHING_TABLE, cmd: 1002, name: "Autocrafter", recipe: "IRI/RCR/IRI (I=IRON,R=REDSTONE,C=CRAFTING_TABLE)", feature: "Toggle autocraft" }
+  belt_machine: { material: SMITHING_TABLE, cmd: 1003, name: "Belt Machine", recipe: "LLL/IRI/R R (L=LEATHER,I=IRON,R=REDSTONE)", feature: "Speed" }
+  crusher: { material: SMITHING_TABLE, cmd: 1004, name: "Crusher", recipe: "III/PFP/III (I=IRON_BLOCK,P=PISTON,F=FURNACE)", feature: "Crush ore -> 2x" }
+  drill: { material: SMITHING_TABLE, cmd: 1005, name: "Drill", recipe: "IDI/IRI/RBR (I=IRON,D=DIAMOND,R=REDSTONE,B=REDSTONE_BLOCK)", feature: "Mine below" }
+  druglab: { material: SMITHING_TABLE, cmd: 1006, name: "Drug Lab", recipe: "GGG/B B/S S (G=GLASS,B=BLAZE,S=BREWING_STAND)", feature: "Brew" }
+  generator: { material: SMITHING_TABLE, cmd: 1007, name: "Generator", recipe: "FFF/RCR/FFF (F=FURNACE,R=REDSTONE,C=COAL_BLOCK)", feature: "Generate redstone" }
+  packaging: { material: SMITHING_TABLE, cmd: 1008, name: "Packaging", recipe: "PPP/ICI/PPP (P=PAPER,I=IRON,C=CHEST)", feature: "Pack 9x" }
+  pipe: { material: SMITHING_TABLE, cmd: 1009, name: "Pipe", recipe: "IGI/IGI/IGI (I=IRON,G=GLASS)", feature: "Filter" }
+  press: { material: SMITHING_TABLE, cmd: 1010, name: "Press", recipe: "III/APA/IPI (I=IRON_BLOCK,A=ANVIL,P=PISTON)", feature: "Press" }
+  sorter: { material: SMITHING_TABLE, cmd: 1011, name: "Sorter", recipe: "HCH/RCR/HCH (H=HOPPER,C=COMPARATOR,R=REDSTONE)", feature: "Sort storage" }
+  spawnercore: { material: SMITHING_TABLE, cmd: 1012, name: "Spawner Core", recipe: "BBB/BNC/BBB (B=IRON_BARS,N=NETHER_STAR,C=TRIAL_SPAWNER)", feature: "Upgrade spawner" }
+  splitter: { material: SMITHING_TABLE, cmd: 1013, name: "Splitter", recipe: "IRI/B B/IRI (I=IRON,R=REDSTONE,B=LEATHER)", feature: "Split" }
+  totem_machine: { material: SMITHING_TABLE, cmd: 1014, name: "Totem Machine", recipe: "OEO/EAE/OEO (O=OBSIDIAN,E=EMERALD,A=GOLD_BLOCK)", feature: "Craft totem" }
+  copper_forge: { material: SMITHING_TABLE, cmd: 1015, name: "Copper Forge", recipe: "CCC/BFB/CCC (C=COPPER_INGOT,B=BRICKS,F=FURNACE)", feature: "Smelt brass" }
 
 gui:
   storage-title: "Custom Storage - 27 Slots"
+  # Shift+block = place against, never open vanilla smithing (CustomBlockListener.java:76)
 
 messages:
   give: "§a✓ Received %name% x%amount% (CMD %cmd%)"
-  place: "§a✓ %name% placed! Right-click for GUI."
+  place: "§a✓ %name% placed! Right-click for GUI (shift+block to place)"
   break: "§c✗ %name% broken!"
   storage-saved: "§a✓ Storage saved!"
 

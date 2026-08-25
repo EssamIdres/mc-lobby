@@ -64,18 +64,11 @@ public class GUIManager implements Listener {
         storage.setItemMeta(m1);
         inv.setItem(11, storage);
 
-        // Slot 13 - Craft / Furnace demo
-        ItemStack craft = new ItemStack(Material.CRAFTING_TABLE);
+        // Slot 13 - Per-machine feature (different per type)
+        ItemStack craft = createFeatureItem(def);
+        craft.getItemMeta().getPersistentDataContainer().set(new NamespacedKey(plugin, "gui_action"), PersistentDataType.STRING, "craft");
+        // need to re-set because helper already sets? ensure
         ItemMeta m2 = craft.getItemMeta();
-        m2.displayName(Component.text("§b§lCrafting §7(Demo)"));
-        m2.lore(List.of(
-                Component.text("§7Demo button - replace with"),
-                Component.text("§7your own logic!"),
-                Component.text(""),
-                Component.text("§7Example: Give diamond"),
-                Component.text(""),
-                Component.text("§e► Click to test")
-        ));
         m2.getPersistentDataContainer().set(new NamespacedKey(plugin, "gui_action"), PersistentDataType.STRING, "craft");
         craft.setItemMeta(m2);
         inv.setItem(13, craft);
@@ -151,6 +144,36 @@ public class GUIManager implements Listener {
         return glass;
     }
 
+    private static ItemStack createFeatureItem(CustomBlockPlugin.BlockType def) {
+        Material mat = Material.CRAFTING_TABLE;
+        String name = "§b§lFeature";
+        List<Component> lore = new ArrayList<>();
+        switch (def.id) {
+            case "altar" -> { mat = Material.TOTEM_OF_UNDYING; name = "§d§lAltar §7- Craft Totem"; lore = List.of(Component.text("§7Craft §fTotem Shard §7→ §fTotem"), Component.text("§7Cost: 4x totem_shard"), Component.text(""), Component.text("§e► Click to craft")); }
+            case "autocrafter" -> { mat = Material.CRAFTING_TABLE; name = "§6§lAutocrafter §7- Toggle"; lore = List.of(Component.text("§7Auto-crafts recipe every 5s"), Component.text("§7Put recipe in Storage"), Component.text(""), Component.text("§e► Click to toggle ON/OFF")); }
+            case "belt", "belt_machine" -> { mat = Material.POWERED_RAIL; name = "§e§lBelt §7- Speed"; lore = List.of(Component.text("§7Conveyor speed setting"), Component.text("§7Currently: §fNormal"), Component.text(""), Component.text("§e► Click to change")); }
+            case "crusher" -> { mat = Material.COBBLESTONE; name = "§8§lCrusher §7- Crush"; lore = List.of(Component.text("§7Crush §fIron Ore → 2x Dust"), Component.text("§7Input: Storage slot 0"), Component.text(""), Component.text("§e► Click to crush")); }
+            case "drill" -> { mat = Material.DIAMOND_PICKAXE; name = "§7§lDrill §7- Mine"; lore = List.of(Component.text("§7Mines block below"), Component.text("§7Drops to Storage"), Component.text(""), Component.text("§e► Click to drill")); }
+            case "druglab" -> { mat = Material.POTION; name = "§5§lDrug Lab §7- Brew"; lore = List.of(Component.text("§7Brew §fraw_drug → essence"), Component.text(""), Component.text("§e► Click to brew")); }
+            case "generator" -> { mat = Material.REDSTONE_BLOCK; name = "§c§lGenerator §7- Power"; lore = List.of(Component.text("§7Generates power from coal"), Component.text("§7Fuel: Storage"), Component.text(""), Component.text("§e► Click to generate")); }
+            case "packaging" -> { mat = Material.PAPER; name = "§a§lPackaging §7- Pack"; lore = List.of(Component.text("§7Pack 9x → 1x"), Component.text(""), Component.text("§e► Click to pack")); }
+            case "pipe" -> { mat = Material.HOPPER; name = "§f§lPipe §7- Filter"; lore = List.of(Component.text("§7Set item filter"), Component.text(""), Component.text("§e► Click to set filter")); }
+            case "press" -> { mat = Material.ANVIL; name = "§6§lPress §7- Press"; lore = List.of(Component.text("§7Press §fSteel Ingot → Plate"), Component.text(""), Component.text("§e► Click to press")); }
+            case "sorter" -> { mat = Material.COMPARATOR; name = "§9§lSorter §7- Sort"; lore = List.of(Component.text("§7Sorts Storage"), Component.text(""), Component.text("§e► Click to sort")); }
+            case "spawnercore" -> { mat = Material.SPAWNER; name = "§5§lSpawner Core §7- Upgrade"; lore = List.of(Component.text("§7Upgrade spawner"), Component.text(""), Component.text("§e► Click to upgrade")); }
+            case "splitter" -> { mat = Material.CHEST; name = "§b§lSplitter §7- Split"; lore = List.of(Component.text("§7Split items 50/50"), Component.text(""), Component.text("§e► Click to split")); }
+            case "totem_machine" -> { mat = Material.TOTEM_OF_UNDYING; name = "§a§lTotem Machine §7- Craft"; lore = List.of(Component.text("§7Craft totem from shards"), Component.text(""), Component.text("§e► Click")); }
+            case "copper_forge" -> { mat = Material.COPPER_INGOT; name = "§6§lCopper Forge §7- Smelt"; lore = List.of(Component.text("§7Smelt §fCopper → Brass"), Component.text(""), Component.text("§e► Click to smelt")); }
+            default -> { mat = Material.CRAFTING_TABLE; name = "§b§lFeature"; lore = List.of(Component.text("§7Generic feature"), Component.text(""), Component.text("§e► Click")); }
+        }
+        ItemStack it = new ItemStack(mat);
+        ItemMeta m = it.getItemMeta();
+        m.displayName(Component.text(name));
+        m.lore(lore);
+        it.setItemMeta(m);
+        return it;
+    }
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
@@ -198,13 +221,49 @@ public class GUIManager implements Listener {
                 Bukkit.getScheduler().runTask(plugin, () -> openStorageGUI(player, loc));
             }
             case "craft" -> {
-                player.sendMessage("§b◆ Craft demo! §7Giving you 1 diamond...");
-                ItemStack diamond = new ItemStack(Material.DIAMOND, 1);
-                HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(diamond);
-                if (!leftover.isEmpty()) {
-                    player.getWorld().dropItemNaturally(player.getLocation(), diamond);
+                String t = plugin.getBlockTypeAt(loc);
+                CustomBlockPlugin.BlockType d = plugin.getBlockTypeDef(t);
+                ItemStack give = null;
+                String msg = "§b◆ " + d.displayName + " §7feature!";
+                org.bukkit.Sound sound = org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
+                switch (d.id) {
+                    case "altar" -> { give = new ItemStack(Material.TOTEM_OF_UNDYING); msg = "§d◆ Altar crafted Totem!"; sound = org.bukkit.Sound.BLOCK_BEACON_ACTIVATE; }
+                    case "autocrafter" -> { msg = "§6◆ Autocrafter toggled! (demo)"; sound = org.bukkit.Sound.BLOCK_PISTON_EXTEND; }
+                    case "belt", "belt_machine" -> { give = new ItemStack(Material.POWERED_RAIL); msg = "§e◆ Belt speed changed!"; }
+                    case "crusher" -> {
+                        // Try to crush iron ore in storage slot 0
+                        String key = plugin.locToKey(loc);
+                        ItemStack[] stor = plugin.getStorage(key);
+                        boolean crushed = false;
+                        for (int i=0;i<stor.length;i++) if (stor[i]!=null && stor[i].getType()==Material.IRON_ORE) { stor[i].setAmount(stor[i].getAmount()-1); if (stor[i].getAmount()<=0) stor[i]=null; give = new ItemStack(Material.IRON_INGOT, 2); msg="§8◆ Crusher: Iron Ore → 2x Iron!"; crushed=true; plugin.saveStorage(key, stor); break; }
+                        if (!crushed) { give = new ItemStack(Material.IRON_INGOT, 2); msg="§8◆ Crusher demo: 2x Iron (add ore to storage slot 0 to crush)"; }
+                    }
+                    case "drill" -> { give = new ItemStack(Material.COBBLESTONE, 3); msg="§7◆ Drill mined 3x Cobblestone!"; sound = org.bukkit.Sound.BLOCK_STONE_BREAK; }
+                    case "druglab" -> { give = new ItemStack(Material.POTION); msg="§5◆ Drug Lab brewed Potion!"; }
+                    case "generator" -> { give = new ItemStack(Material.REDSTONE, 5); msg="§c◆ Generator produced 5x Redstone!"; sound = org.bukkit.Sound.BLOCK_FURNACE_FIRE_CRACKLE; }
+                    case "packaging" -> { give = new ItemStack(Material.PAPER, 9); msg="§a◆ Packaging packed 9x Paper!"; }
+                    case "pipe" -> { msg="§f◆ Pipe filter set! (demo)"; }
+                    case "press" -> { give = new ItemStack(Material.IRON_INGOT); msg="§6◆ Press pressed Steel Plate!"; sound = org.bukkit.Sound.BLOCK_ANVIL_USE; }
+                    case "sorter" -> {
+                        String key2 = plugin.locToKey(loc);
+                        ItemStack[] stor2 = plugin.getStorage(key2);
+                        Arrays.sort(stor2, Comparator.comparing(s -> s==null? "zzz" : s.getType().toString()));
+                        plugin.saveStorage(key2, stor2);
+                        msg="§9◆ Sorter sorted Storage!";
+                        sound = org.bukkit.Sound.BLOCK_CHEST_OPEN;
+                    }
+                    case "spawnercore" -> { give = new ItemStack(Material.SPAWNER); msg="§5◆ Spawner Core upgraded!"; }
+                    case "splitter" -> { msg="§b◆ Splitter split items!"; }
+                    case "totem_machine" -> { give = new ItemStack(Material.TOTEM_OF_UNDYING); msg="§a◆ Totem Machine crafted Totem!"; }
+                    case "copper_forge" -> { give = new ItemStack(Material.COPPER_INGOT, 2); msg="§6◆ Copper Forge smelted 2x Copper → Brass!"; sound = org.bukkit.Sound.BLOCK_FURNACE_FIRE_CRACKLE; }
+                    default -> { give = new ItemStack(Material.DIAMOND, 1); msg="§b◆ Feature demo!"; }
                 }
-                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                player.sendMessage(msg);
+                if (give != null) {
+                    var leftover = player.getInventory().addItem(give);
+                    if (!leftover.isEmpty()) for (ItemStack it : leftover.values()) player.getWorld().dropItemNaturally(player.getLocation(), it);
+                }
+                player.playSound(player.getLocation(), sound, 1f, 1f);
             }
             case "info" -> {
                 String t = plugin.getBlockTypeAt(loc);

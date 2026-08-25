@@ -81,18 +81,21 @@ public class CustomBlockListener implements Listener {
 
         if (!plugin.isCustomBlock(loc)) return;
 
-        switch (event.getAction()) {
-            case RIGHT_CLICK_BLOCK -> {
-                if (event.getPlayer().isSneaking()) {
-                    if (event.getPlayer().getInventory().getItemInMainHand().getType().isBlock()) {
-                        return;
-                    }
-                }
-                event.setCancelled(true);
-                GUIManager.openMainGUI(event.getPlayer(), loc);
+        if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+            // ALWAYS block vanilla GUI (smithing table) — never open vanilla
+            event.setCancelled(true);
+            // If sneaking + holding block -> allow placement against it, don't open custom GUI
+            if (event.getPlayer().isSneaking() && event.getPlayer().getInventory().getItemInMainHand().getType().isBlock()) {
+                // Let placement happen: we cancelled interact, so need to manually allow placement?
+                // Instead, don't cancel placement: re-enable by not cancelling? But we already cancelled to block vanilla GUI.
+                // So we simulate placement: but simpler — just don't open GUI, let player place via second click
+                // For now, just do nothing (no GUI) so vanilla never opens, and player can place on next air click
+                // Actually to allow placing, we need to NOT cancel. So un-cancel and return.
+                event.setCancelled(false);
+                return;
             }
-            case LEFT_CLICK_BLOCK -> {}
-            default -> {}
+            // Otherwise open custom GUI (covers normal click and shift+empty)
+            GUIManager.openMainGUI(event.getPlayer(), loc);
         }
     }
 }
