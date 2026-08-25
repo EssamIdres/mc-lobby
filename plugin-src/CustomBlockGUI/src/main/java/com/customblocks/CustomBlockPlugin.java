@@ -7,10 +7,16 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +33,8 @@ public class CustomBlockPlugin extends JavaPlugin {
     private final Set<String> customBlocks = new HashSet<>(); // derived for fast check, also legacy
     // Per-block storage: locationKey -> ItemStack[27]
     private final Map<String, ItemStack[]> blockStorages = new HashMap<>();
+    // Display entities per block (for placed texture)
+    private final Map<String, UUID> displayEntities = new HashMap<>();
 
     private File dataFile;
     private FileConfiguration dataConfig;
@@ -97,10 +105,14 @@ public class CustomBlockPlugin extends JavaPlugin {
         // Register 15 shaped recipes (DiscoveryLab - survival craftable)
         registerRecipes();
 
-        getLogger().info("CustomBlockGUI v1.2.0 enabled! " + BLOCK_TYPES.size() + " custom blocks: " + String.join(", ", BLOCK_TYPES.keySet()));
+        // Respawn display entities for placed texture (ItemDisplay)
+        Bukkit.getScheduler().runTaskLater(this, this::respawnAllDisplays, 40L);
+
+        getLogger().info("CustomBlockGUI v1.3.0 enabled! " + BLOCK_TYPES.size() + " custom blocks: " + String.join(", ", BLOCK_TYPES.keySet()));
         getLogger().info("Use /givecustomblock <type> or /givecustomblock * | Textures via DiscoveryLab-pack (new way, no Oraxen)");
         getLogger().info("Recipes registered for all 15 machines - craft in survival!");
         getLogger().info("Per-block GUI features: crusher, drill, generator, etc. - shift+block to place, no vanilla smithing GUI");
+        getLogger().info("Placed blocks use ItemDisplay (BARRIER+display) for right texture + right GUI");
     }
 
     @Override
@@ -109,6 +121,8 @@ public class CustomBlockPlugin extends JavaPlugin {
             saveCustomBlocks();
             getLogger().info("CustomBlockGUI disabled, saved " + blockTypes.size() + " blocks");
         }
+        // Optionally keep displays persistent across restart? We remove and respawn on enable.
+        // Don't remove here to keep them saved in world, but we also respawn check.
     }
 
     public static CustomBlockPlugin getInstance() {
@@ -321,6 +335,102 @@ public class CustomBlockPlugin extends JavaPlugin {
 
     public ItemStack[] getStorage(String key) {
         return blockStorages.getOrDefault(key, new ItemStack[27]);
+    }
+
+    // === DISPLAY ENTITIES (placed block texture) ===
+    public void spawnDisplay(Location loc, String typeId) {
+        try {
+            String key = locToKey(loc);
+            // Remove old if exists
+            removeDisplay(loc);
+            BlockType def = getBlockTypeDef(typeId);
+            World w = loc.getWorld();
+            if (w == null) return;
+            Location center = loc.clone().add(0.5, 0.5, 0.5);
+            ItemDisplay display = (ItemDisplay) w.spawnEntity(center, EntityType.ITEM_DISPLAY);
+            ItemStack item = createCustomBlockItem(typeId, 1);
+            display.setItemStack(item);
+            display.setBillboard(Display.Billboard.FIXED);
+            // Make it look like a block (scale 1, at center)
+            // Transformation: translation 0, scale 1 (block size), no rotation
+            // For 1.21 item display as block, need to set transform
+            try {
+                display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+            } catch (Exception ignored) {}
+            // Scale to block size: use transformation API
+            Transformation trans = display.getTransformation();
+            // Keep translation 0, scale 1.0 (full block)
+            trans.getScale().set(1.0f, 1.0f, 1.0f);
+            trans.getTranslation().set(0, 0, 0);
+            trans.getLeftRotation().set(new Quaternionf());
+            trans.getRightRotation().set(new Quaternionf());
+            display.setTransformation(trans);
+            display.setPersistent(true);
+            display.setInvulnerable(true);
+            // Tag with location key for finding
+            display.getPersistentDataContainer().set(new NamespacedKey(this, "display_loc"), PersistentDataType.STRING, key);
+            display.getPersistentDataContainer().set(customBlockTypeKey, PersistentDataType.STRING, typeId);
+            // Hide base block: set to BARRIER (invisible) — caller should have done
+            displayEntities.put(key, display.getUniqueId());
+            // Save not needed, we respawn on load via world scan
+        } catch (Exception e) {
+            getLogger().warning("Failed spawn display for " + typeId + " at " + loc + ": " + e.getMessage());
+        }
+    }
+
+    public void removeDisplay(Location loc) {
+        try {
+            String key = locToKey(loc);
+            UUID uuid = displayEntities.remove(key);
+            if (uuid != null) {
+                var ent = Bukkit.getEntity(uuid);
+                if (ent != null) ent.remove();
+            }
+            // Also scan nearby as fallback (in case UUID not tracked, e.g. after restart)
+            World w = loc.getWorld();
+            if (w != null) {
+                Location center = loc.clone().add(0.5, 0.5, 0.5);
+                for (var e : w.getNearbyEntities(center, 0.5, 0.5, 0.5)) {
+                    if (e.getType() == EntityType.ITEM_DISPLAY) {
+                        ItemDisplay disp = (ItemDisplay) e;
+                        String locKey = disp.getPersistentDataContainer().get(new NamespacedKey(this, "display_loc"), PersistentDataType.STRING);
+                        if (key.equals(locKey)) {
+                            disp.remove();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public void respawnAllDisplays() {
+        int spawned = 0;
+        for (var entry : new HashMap<>(blockTypes).entrySet()) {
+            String key = entry.getKey();
+            String typeId = entry.getValue();
+            Location loc = keyToLoc(key);
+            if (loc == null) continue;
+            World w = loc.getWorld();
+            if (w == null) continue;
+            // Check if display already exists nearby
+            boolean exists = false;
+            Location center = loc.clone().add(0.5, 0.5, 0.5);
+            for (var e : w.getNearbyEntities(center, 0.6, 0.6, 0.6)) {
+                if (e.getType() == EntityType.ITEM_DISPLAY) {
+                    ItemDisplay d = (ItemDisplay) e;
+                    String lk = d.getPersistentDataContainer().get(new NamespacedKey(this, "display_loc"), PersistentDataType.STRING);
+                    if (key.equals(lk)) { exists = true; break; }
+                }
+            }
+            if (!exists) {
+                // Ensure base block is BARRIER for new rendering (keep old SMITHING_TABLE as is, but new will be BARRIER)
+                // If block is still SMITHING_TABLE, leave it; display will still show on top (may z-fight but visible)
+                // For better, we keep BARRIER for future placements only
+                spawnDisplay(loc, typeId);
+                spawned++;
+            }
+        }
+        if (spawned > 0) getLogger().info("Respawned " + spawned + " ItemDisplay for custom blocks (placed texture)");
     }
 
     // === RECIPES (15 DiscoveryLab machines) ===

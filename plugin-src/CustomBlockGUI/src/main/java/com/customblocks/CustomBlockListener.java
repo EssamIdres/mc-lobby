@@ -29,15 +29,18 @@ public class CustomBlockListener implements Listener {
             Block block = event.getBlockPlaced();
             String type = plugin.getTypeFromItem(item);
             CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(type);
-            // Force correct material (in case of different type materials)
-            if (block.getType() != def.material) {
-                block.setType(def.material);
-            }
+
+            // New way: use BARRIER as invisible base + ItemDisplay for custom texture (so placed looks right)
+            // Keep SMITHING_TABLE for legacy, but new placements use BARRIER for clean rendering
+            Block placed = event.getBlockPlaced();
+            placed.setType(Material.BARRIER);
 
             Location loc = block.getLocation();
             plugin.addCustomBlock(loc, type);
+            // Spawn display for placed texture
+            plugin.spawnDisplay(loc, type);
 
-            player.sendMessage("§a✓ " + def.displayName + " §aplaced! §7Right-click for GUI.");
+            player.sendMessage("§a✓ " + def.displayName + " §aplaced! §7Right-click for GUI. §8(Shift+block to place against)");
         }
     }
 
@@ -51,6 +54,9 @@ public class CustomBlockListener implements Listener {
             CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(typeId);
             event.setDropItems(false);
             event.setExpToDrop(0);
+
+            // Remove display entity for placed texture
+            plugin.removeDisplay(loc);
 
             // Drop storage contents first
             String key = plugin.locToKey(loc);
