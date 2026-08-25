@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "block/pipe_bottom",
+    "up": "block/pipe_top",
+    "north": "block/pipe_front",
+    "south": "block/pipe_back",
+    "east": "block/pipe_right",
+    "west": "block/pipe_left"
+  }
+}

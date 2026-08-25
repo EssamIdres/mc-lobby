@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "block/druglab_bottom",
+    "up": "block/druglab_top",
+    "north": "block/druglab_front",
+    "south": "block/druglab_back",
+    "east": "block/druglab_right",
+    "west": "block/druglab_left"
+  }
+}

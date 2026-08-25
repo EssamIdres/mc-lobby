@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "block/sorter_bottom",
+    "up": "block/sorter_top",
+    "north": "block/sorter_front",
+    "south": "block/sorter_back",
+    "east": "block/sorter_right",
+    "west": "block/sorter_left"
+  }
+}

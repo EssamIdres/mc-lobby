@@ -1,0 +1,23 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "item/smithing_table"
+  },
+  "overrides": [
+    {"predicate": {"custom_model_data": 1001}, "model": "block/altar"},
+    {"predicate": {"custom_model_data": 1002}, "model": "block/autocrafter"},
+    {"predicate": {"custom_model_data": 1003}, "model": "block/belt_machine"},
+    {"predicate": {"custom_model_data": 1004}, "model": "block/crusher"},
+    {"predicate": {"custom_model_data": 1005}, "model": "block/drill"},
+    {"predicate": {"custom_model_data": 1006}, "model": "block/druglab"},
+    {"predicate": {"custom_model_data": 1007}, "model": "block/generator"},
+    {"predicate": {"custom_model_data": 1008}, "model": "block/packaging"},
+    {"predicate": {"custom_model_data": 1009}, "model": "block/pipe"},
+    {"predicate": {"custom_model_data": 1010}, "model": "block/press"},
+    {"predicate": {"custom_model_data": 1011}, "model": "block/sorter"},
+    {"predicate": {"custom_model_data": 1012}, "model": "block/spawnercore"},
+    {"predicate": {"custom_model_data": 1013}, "model": "block/splitter"},
+    {"predicate": {"custom_model_data": 1014}, "model": "block/totem_machine"},
+    {"predicate": {"custom_model_data": 1015}, "model": "block/copper_forge"}
+  ]
+}

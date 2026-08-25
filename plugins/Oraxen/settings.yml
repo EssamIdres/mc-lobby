@@ -1,0 +1,18 @@
+# Oraxen settings - auto-host via Polymath for DiscoveryLab textures
+Pack:
+  generation:
+    generate: true
+    protection: false
+    comment: "DiscoveryLab 15 machines - Oraxen auto-host"
+  upload:
+    enabled: true
+    type: polymath
+    polymath:
+      server: atlas.oraxen.com
+      secret: "oraxen"
+  dispatch:
+    send_pack: true
+    mandatory: true
+    prompt: "<#fa4943>DiscoveryLab pack - Accept for custom machines!"
+  receive:
+    enabled: true

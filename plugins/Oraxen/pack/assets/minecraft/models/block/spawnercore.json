@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "block/spawnercore_bottom",
+    "up": "block/spawnercore_top",
+    "north": "block/spawnercore_front",
+    "south": "block/spawnercore_back",
+    "east": "block/spawnercore_right",
+    "west": "block/spawnercore_left"
+  }
+}

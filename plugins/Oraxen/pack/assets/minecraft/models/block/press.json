@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "block/press_bottom",
+    "up": "block/press_top",
+    "north": "block/press_front",
+    "south": "block/press_back",
+    "east": "block/press_right",
+    "west": "block/press_left"
+  }
+}
