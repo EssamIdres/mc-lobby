@@ -129,9 +129,9 @@ EOF
   tail -20 velocity.log
 fi
 
-# Configure Velocity modern forwarding on the Paper backend
-if [ -n "$VELOCITY_SECRET" ]; then
-  echo "==> Configuring Velocity forwarding for Paper..."
+# Configure Velocity modern forwarding on the Paper backend (only if proxy is enabled)
+if [ "$PROXY_HOST" = "true" ] && [ -n "$VELOCITY_SECRET" ]; then
+  echo "==> Configuring Velocity forwarding for Paper (proxy ON)..."
   mkdir -p config
   cat > config/paper-global.yml <<EOF
 proxies:
@@ -140,6 +140,18 @@ proxies:
     online-mode: false
     secret: "$VELOCITY_SECRET"
 EOF
+else
+  echo "==> Velocity forwarding DISABLED (direct join, no proxy)..."
+  mkdir -p config
+  cat > config/paper-global.yml <<EOF
+proxies:
+  velocity:
+    enabled: false
+EOF
+  # Also ensure server doesn't require proxy forwarding
+  rm -f config/paper-global.yml 2>/dev/null || true
+  mkdir -p config
+  echo "proxies: { velocity: { enabled: false } }" > config/paper-global.yml
 fi
 
 # Restore latest backup (persistent world) if one exists
