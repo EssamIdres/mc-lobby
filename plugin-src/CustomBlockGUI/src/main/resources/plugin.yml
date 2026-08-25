@@ -1,9 +1,9 @@
 name: CustomBlockGUI
-version: '1.3.2'
+version: '1.3.3'
 main: com.customblocks.CustomBlockPlugin
 api-version: '1.21'
 author: CustomBlocks
-description: Fix half size + long show - scale 2.5 viewRange 128 delay 20ticks - placed full block
+description: Scale 2.0 per user (was 2.5 big, 1.6 half) - placed full block
 prefix: CustomBlock
 
 commands:

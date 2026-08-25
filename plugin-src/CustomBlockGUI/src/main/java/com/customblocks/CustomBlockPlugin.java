@@ -35,6 +35,8 @@ public class CustomBlockPlugin extends JavaPlugin {
     private final Map<String, ItemStack[]> blockStorages = new HashMap<>();
     // Display entities per block (for placed texture)
     private final Map<String, UUID> displayEntities = new HashMap<>();
+    // Rotation per block (yaw degrees)
+    private final Map<String, Float> blockRotations = new HashMap<>();
 
     private File dataFile;
     private FileConfiguration dataConfig;
@@ -155,7 +157,7 @@ public class CustomBlockPlugin extends JavaPlugin {
             ));
             meta.getPersistentDataContainer().set(customBlockKey, PersistentDataType.BYTE, (byte) 1);
             meta.getPersistentDataContainer().set(customBlockTypeKey, PersistentDataType.STRING, type.id);
-            meta.setEnchantmentGlintOverride(true);
+            meta.setEnchantmentGlintOverride(false);
             meta.setCustomModelData(type.customModelData);
             item.setItemMeta(meta);
         }
@@ -217,16 +219,24 @@ public class CustomBlockPlugin extends JavaPlugin {
         return null;
     }
 
-    public void addCustomBlock(Location loc, String typeId) {
+    public void addCustomBlock(Location loc, String typeId, float yaw) {
         String key = locToKey(loc);
         String type = getBlockTypeDef(typeId).id;
         blockTypes.put(key, type);
         customBlocks.add(key);
+        // Store rotation snapped to 90 degrees (0,90,180,270)
+        float rot = Math.round(yaw / 90f) * 90f;
+        rot = (rot % 360 + 360) % 360;
+        blockRotations.put(key, rot);
         saveCustomBlocks();
     }
 
+    public void addCustomBlock(Location loc, String typeId) {
+        addCustomBlock(loc, typeId, 0f);
+    }
+
     public void addCustomBlock(Location loc) {
-        addCustomBlock(loc, "machine");
+        addCustomBlock(loc, "machine", 0f);
     }
 
     public void removeCustomBlock(Location loc) {
@@ -234,7 +244,12 @@ public class CustomBlockPlugin extends JavaPlugin {
         blockTypes.remove(key);
         customBlocks.remove(key);
         blockStorages.remove(key);
+        blockRotations.remove(key);
         saveCustomBlocks();
+    }
+
+    public float getBlockRotation(Location loc) {
+        return blockRotations.getOrDefault(locToKey(loc), 0f);
     }
 
     public Set<String> getCustomBlocks() {
@@ -300,9 +315,19 @@ public class CustomBlockPlugin extends JavaPlugin {
             getLogger().info("Loaded " + blockStorages.size() + " storages");
         }
 
+        // Load rotations
+        if (dataConfig.contains("rotations")) {
+            for (String key : dataConfig.getConfigurationSection("rotations").getKeys(false)) {
+                float rot = (float) dataConfig.getDouble("rotations." + key);
+                blockRotations.put(key, rot);
+            }
+            getLogger().info("Loaded " + blockRotations.size() + " rotations");
+        }
+
         // Validate (remove invalid worlds)
         blockTypes.keySet().removeIf(key -> keyToLoc(key) == null);
         customBlocks.removeIf(key -> keyToLoc(key) == null);
+        blockRotations.keySet().removeIf(key -> keyToLoc(key) == null);
     }
 
     public void saveCustomBlocks() {
@@ -321,6 +346,10 @@ public class CustomBlockPlugin extends JavaPlugin {
                 if (!empty) {
                     dataConfig.set("storages." + entry.getKey(), Arrays.asList(entry.getValue()));
                 }
+            }
+            dataConfig.set("rotations", null);
+            for (Map.Entry<String, Float> e : blockRotations.entrySet()) {
+                dataConfig.set("rotations." + e.getKey(), e.getValue());
             }
             dataConfig.save(dataFile);
         } catch (IOException e) {
@@ -363,10 +392,13 @@ public class CustomBlockPlugin extends JavaPlugin {
             // Brightness max so it shows even in dark
             try { display.setBrightness(new Display.Brightness(15, 15)); } catch (Exception ignored) {}
             Transformation trans = display.getTransformation();
-            // Was 1.6 half size - use 2.5 to fill full block
-            trans.getScale().set(2.5f, 2.5f, 2.5f);
+            // Was 1.6 half size - use 2.0 per user (was 2.5 big)
+            trans.getScale().set(2.0f, 2.0f, 2.0f);
             trans.getTranslation().set(0, 0, 0);
-            trans.getLeftRotation().set(new Quaternionf());
+            // Rotation based on stored yaw
+            float rot = blockRotations.getOrDefault(key, 0f);
+            float rad = (float) Math.toRadians(-rot);
+            trans.getLeftRotation().set(new Quaternionf().rotateY(rad));
             trans.getRightRotation().set(new Quaternionf());
             display.setTransformation(trans);
             display.setInterpolationDuration(0);

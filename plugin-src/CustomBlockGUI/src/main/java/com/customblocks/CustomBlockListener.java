@@ -30,17 +30,16 @@ public class CustomBlockListener implements Listener {
             String type = plugin.getTypeFromItem(item);
             CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(type);
 
-            // New way: use BARRIER as invisible base + ItemDisplay for custom texture (so placed looks right)
-            // Keep SMITHING_TABLE for legacy, but new placements use BARRIER for clean rendering
+            // New way: BARRIER + ItemDisplay with rotation
             Block placed = event.getBlockPlaced();
             placed.setType(Material.BARRIER);
 
             Location loc = block.getLocation();
-            plugin.addCustomBlock(loc, type);
-            // Spawn display for placed texture
+            float yaw = player.getLocation().getYaw();
+            plugin.addCustomBlock(loc, type, yaw);
             plugin.spawnDisplay(loc, type);
 
-            player.sendMessage("§a✓ " + def.displayName + " §aplaced! §7Right-click for GUI. §8(Shift+block to place against)");
+            player.sendMessage("§a✓ " + def.displayName + " §aplaced! §7Right-click for GUI. §8(Shift+block to place against) §7Rot: " + Math.round(yaw/90)*90);
         }
     }
 
@@ -52,6 +51,16 @@ public class CustomBlockListener implements Listener {
         if (plugin.isCustomBlock(loc)) {
             String typeId = plugin.getBlockTypeAt(loc);
             CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(typeId);
+            // Break system: require pickaxe in survival
+            if (event.getPlayer().getGameMode() == org.bukkit.GameMode.SURVIVAL) {
+                Material hand = event.getPlayer().getInventory().getItemInMainHand().getType();
+                if (!hand.toString().contains("PICKAXE")) {
+                    event.setCancelled(true);
+                    event.getPlayer().sendMessage("§c✗ Need pickaxe to break " + def.displayName + " §7(hold pickaxe)");
+                    event.getPlayer().sendActionBar(net.kyori.adventure.text.Component.text("§cNeed pickaxe!"));
+                    return;
+                }
+            }
             event.setDropItems(false);
             event.setExpToDrop(0);
 

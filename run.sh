@@ -151,6 +151,19 @@ else
   echo "==> No backups found — generating a fresh world."
 fi
 
+# Re-build CustomBlockGUI after restore (restore may have overwritten with old backup) + ensure Oraxen/ProtocolLib present
+if [ -f plugin-src/CustomBlockGUI/pom.xml ]; then
+  echo "==> Re-building CustomBlockGUI after restore (ensure latest)..."
+  (cd plugin-src/CustomBlockGUI && mvn -B package -DskipTests 2>&1 | tail -5 && mkdir -p ../../plugins && cp -f target/CustomBlockGUI-*.jar ../../plugins/ && ls -lh ../../plugins/CustomBlockGUI*.jar)
+else
+  echo "==> plugin-src not found, skipping rebuild"
+fi
+# Ensure Oraxen and ProtocolLib from repo are present (rclone copy doesn't delete, but ensure)
+if [ ! -f plugins/Oraxen.jar ]; then echo "==> WARNING Oraxen.jar missing after restore!"; ls -lh plugins/ | head -20; fi
+if [ ! -f plugins/ProtocolLib.jar ]; then echo "==> WARNING ProtocolLib.jar missing after restore!"; fi
+echo "==> Plugins after restore+rebuild:"
+ls -lh plugins/ 2>&1 | head -30
+
 # Named pipe so we can send server commands (save-all) reliably
 PIPE=/tmp/mc-in
 rm -f "$PIPE"
