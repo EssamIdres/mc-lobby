@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/cube_directional",
+  "textures": {
+    "north": "block/belt_machine_front",
+    "south": "block/belt_machine_back",
+    "east": "block/belt_machine_side",
+    "west": "block/belt_machine_side",
+    "up": "block/belt_machine_top",
+    "down": "block/belt_machine_bottom"
+  }
+}
