@@ -201,11 +201,21 @@ JSON
 fi
 ls -lh plugins/Oraxen/pack/assets/minecraft/models/item/smithing_table.json 2>&1 | head -5
 ls -lh plugins/Oraxen/settings.yml 2>&1 | head -5
-# Ensure Oraxen and ProtocolLib from repo are present (rclone copy doesn't delete, but ensure)
-if [ ! -f plugins/Oraxen.jar ]; then echo "==> WARNING Oraxen.jar missing after restore!"; ls -lh plugins/ | head -20; fi
-if [ ! -f plugins/ProtocolLib.jar ]; then echo "==> WARNING ProtocolLib.jar missing after restore!"; fi
+# Ensure Oraxen and ProtocolLib from repo are present (rclone copy doesn't delete, but restore may have old backup without them)
+if [ ! -f plugins/Oraxen.jar ]; then
+  echo "==> Oraxen.jar missing after restore, restoring from repo..."
+  git checkout -- plugins/Oraxen.jar 2>&1 | head -5 || echo "git checkout Oraxen.jar failed"
+  ls -lh plugins/Oraxen.jar 2>&1 | head -5 || echo "still missing"
+fi
+if [ ! -f plugins/ProtocolLib.jar ]; then
+  echo "==> ProtocolLib.jar missing after restore, restoring from repo..."
+  git checkout -- plugins/ProtocolLib.jar 2>&1 | head -5 || echo "git checkout ProtocolLib failed"
+  ls -lh plugins/ProtocolLib.jar 2>&1 | head -5 || echo "still missing"
+fi
 echo "==> Plugins after restore+rebuild:"
 ls -lh plugins/ 2>&1 | head -30
+# Debug Oraxen load check
+if [ -f plugins/Oraxen.jar ]; then echo "Oraxen present for texture"; else echo "Oraxen STILL missing!"; fi
 
 # Named pipe so we can send server commands (save-all) reliably
 PIPE=/tmp/mc-in
