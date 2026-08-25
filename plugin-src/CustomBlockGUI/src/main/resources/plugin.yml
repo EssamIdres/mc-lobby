@@ -1,9 +1,9 @@
 name: CustomBlockGUI
-version: '1.3.1'
+version: '1.3.2'
 main: com.customblocks.CustomBlockPlugin
 api-version: '1.21'
 author: CustomBlocks
-description: Fix placed texture (BARRIER+ItemDisplay scale 1.6 bright) + right GUI per block - DiscoveryLab 15 CMD
+description: Fix half size + long show - scale 2.5 viewRange 128 delay 20ticks - placed full block
 prefix: CustomBlock
 
 commands:

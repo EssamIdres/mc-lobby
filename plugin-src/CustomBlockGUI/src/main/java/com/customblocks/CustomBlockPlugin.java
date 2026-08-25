@@ -105,14 +105,14 @@ public class CustomBlockPlugin extends JavaPlugin {
         // Register 15 shaped recipes (DiscoveryLab - survival craftable)
         registerRecipes();
 
-        // Respawn display entities for placed texture (ItemDisplay)
-        Bukkit.getScheduler().runTaskLater(this, this::respawnAllDisplays, 40L);
+        // Respawn display entities for placed texture (ItemDisplay) - was 40 ticks (too slow), now 20 ticks (1s)
+        Bukkit.getScheduler().runTaskLater(this, this::respawnAllDisplays, 20L);
 
-        getLogger().info("CustomBlockGUI v1.3.0 enabled! " + BLOCK_TYPES.size() + " custom blocks: " + String.join(", ", BLOCK_TYPES.keySet()));
+        getLogger().info("CustomBlockGUI v1.3.1 enabled! " + BLOCK_TYPES.size() + " custom blocks: " + String.join(", ", BLOCK_TYPES.keySet()));
         getLogger().info("Use /givecustomblock <type> or /givecustomblock * | Textures via DiscoveryLab-pack (new way, no Oraxen)");
         getLogger().info("Recipes registered for all 15 machines - craft in survival!");
         getLogger().info("Per-block GUI features: crusher, drill, generator, etc. - shift+block to place, no vanilla smithing GUI");
-        getLogger().info("Placed blocks use ItemDisplay (BARRIER+display) for right texture + right GUI");
+        getLogger().info("Placed blocks use ItemDisplay scale 2.5 BARRIER+display for full size");
     }
 
     @Override
@@ -363,15 +363,15 @@ public class CustomBlockPlugin extends JavaPlugin {
             // Brightness max so it shows even in dark
             try { display.setBrightness(new Display.Brightness(15, 15)); } catch (Exception ignored) {}
             Transformation trans = display.getTransformation();
-            // Scale 1.0 = full block, but ItemDisplay item is rendered at 0.625 for FIXED, so scale up to 1.6 to fill block
-            // Test shows FIXED with 0.625 -> need 1.6 to fill 1 block
-            trans.getScale().set(1.6f, 1.6f, 1.6f);
+            // Was 1.6 half size - use 2.5 to fill full block
+            trans.getScale().set(2.5f, 2.5f, 2.5f);
             trans.getTranslation().set(0, 0, 0);
             trans.getLeftRotation().set(new Quaternionf());
             trans.getRightRotation().set(new Quaternionf());
             display.setTransformation(trans);
             display.setInterpolationDuration(0);
             display.setTeleportDuration(0);
+            display.setViewRange(128);
             display.setPersistent(true);
             display.setInvulnerable(true);
             display.setCustomNameVisible(false);
