@@ -1,20 +1,32 @@
-# CustomBlockGUI Config
-# Paper 1.21.1
+# CustomBlockGUI v1.1.0 - DiscoveryLab multi-texture (new way, no Oraxen)
+# Each block below has different texture via CustomModelData 1001-1015
+# Resource pack: DiscoveryLab-pack (assets/minecraft/models/block/*.json)
+# Install pack as server resource-pack or Velocity
 
-# Visual block for custom block
-custom-block-material: SMITHING_TABLE
+custom-blocks:
+  altar: { material: SMITHING_TABLE, cmd: 1001, name: "Altar" }
+  autocrafter: { material: SMITHING_TABLE, cmd: 1002, name: "Autocrafter" }
+  belt_machine: { material: SMITHING_TABLE, cmd: 1003, name: "Belt Machine" }
+  crusher: { material: SMITHING_TABLE, cmd: 1004, name: "Crusher" }
+  drill: { material: SMITHING_TABLE, cmd: 1005, name: "Drill" }
+  druglab: { material: SMITHING_TABLE, cmd: 1006, name: "Drug Lab" }
+  generator: { material: SMITHING_TABLE, cmd: 1007, name: "Generator" }
+  packaging: { material: SMITHING_TABLE, cmd: 1008, name: "Packaging" }
+  pipe: { material: SMITHING_TABLE, cmd: 1009, name: "Pipe" }
+  press: { material: SMITHING_TABLE, cmd: 1010, name: "Press" }
+  sorter: { material: SMITHING_TABLE, cmd: 1011, name: "Sorter" }
+  spawnercore: { material: SMITHING_TABLE, cmd: 1012, name: "Spawner Core" }
+  splitter: { material: SMITHING_TABLE, cmd: 1013, name: "Splitter" }
+  totem_machine: { material: SMITHING_TABLE, cmd: 1014, name: "Totem Machine" }
+  copper_forge: { material: SMITHING_TABLE, cmd: 1015, name: "Copper Forge" }
 
-# GUI titles
 gui:
-  main-title: "Custom Machine - Menu"
   storage-title: "Custom Storage - 27 Slots"
 
-# Messages
 messages:
-  give: "§a✓ Received Custom Machine x%amount%"
-  place: "§a✓ Custom Block placed! Right-click to open GUI."
-  break: "§c✗ Custom Block broken!"
+  give: "§a✓ Received %name% x%amount% (CMD %cmd%)"
+  place: "§a✓ %name% placed! Right-click for GUI."
+  break: "§c✗ %name% broken!"
   storage-saved: "§a✓ Storage saved!"
 
-# Storage size (always 27 for now)
 storage-size: 27

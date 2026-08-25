@@ -27,15 +27,17 @@ public class CustomBlockListener implements Listener {
 
         if (plugin.isCustomBlockItem(item)) {
             Block block = event.getBlockPlaced();
-            // Ensure correct type (in case item was different)
-            // Already SMITHING_TABLE, but force it
-            // block.setType(CustomBlockPlugin.CUSTOM_BLOCK_MATERIAL);
+            String type = plugin.getTypeFromItem(item);
+            CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(type);
+            // Force correct material (in case of different type materials)
+            if (block.getType() != def.material) {
+                block.setType(def.material);
+            }
 
             Location loc = block.getLocation();
-            plugin.addCustomBlock(loc);
+            plugin.addCustomBlock(loc, type);
 
-            player.sendMessage("§a✓ Custom Block placed! §7Right-click it to open GUI.");
-            // Optional: prevent vanilla placement sound redo
+            player.sendMessage("§a✓ " + def.displayName + " §aplaced! §7Right-click for GUI.");
         }
     }
 
@@ -45,6 +47,8 @@ public class CustomBlockListener implements Listener {
         Location loc = block.getLocation();
 
         if (plugin.isCustomBlock(loc)) {
+            String typeId = plugin.getBlockTypeAt(loc);
+            CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(typeId);
             event.setDropItems(false);
             event.setExpToDrop(0);
 
@@ -61,14 +65,11 @@ public class CustomBlockListener implements Listener {
 
             plugin.removeCustomBlock(loc);
 
-            // Drop the custom block item itself
-            ItemStack drop = plugin.createCustomBlockItem(1);
+            // Drop the correct custom block item itself
+            ItemStack drop = plugin.createCustomBlockItem(typeId, 1);
             block.getWorld().dropItemNaturally(loc, drop);
 
-            event.getPlayer().sendMessage("§c✗ Custom Block broken! §7Storage dropped if any.");
-
-            // Ensure block becomes air (handle if event cancelled elsewhere)
-            // Bukkit will handle.
+            event.getPlayer().sendMessage("§c✗ " + def.displayName + " §7broken! Storage dropped.");
         }
     }
 
@@ -80,12 +81,9 @@ public class CustomBlockListener implements Listener {
 
         if (!plugin.isCustomBlock(loc)) return;
 
-        // Only handle right-click block
         switch (event.getAction()) {
             case RIGHT_CLICK_BLOCK -> {
-                // Allow shift-right-click to bypass GUI (for placing blocks against it)
                 if (event.getPlayer().isSneaking()) {
-                    // Let player place block if sneaking and holding block
                     if (event.getPlayer().getInventory().getItemInMainHand().getType().isBlock()) {
                         return;
                     }
@@ -93,10 +91,7 @@ public class CustomBlockListener implements Listener {
                 event.setCancelled(true);
                 GUIManager.openMainGUI(event.getPlayer(), loc);
             }
-            case LEFT_CLICK_BLOCK -> {
-                // Optional: left click info
-                // Don't cancel, let break handle
-            }
+            case LEFT_CLICK_BLOCK -> {}
             default -> {}
         }
     }

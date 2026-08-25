@@ -1,19 +1,19 @@
 name: CustomBlockGUI
-version: '1.0.0'
+version: '1.1.0'
 main: com.customblocks.CustomBlockPlugin
 api-version: '1.21'
 author: CustomBlocks
-description: Custom Block with Custom GUI - Place and interact to open GUI
+description: DiscoveryLab multi-texture custom blocks with GUI - new way no Oraxen (15 textures via CustomModelData 1001-1015)
 prefix: CustomBlock
 
 commands:
   givecustomblock:
-    description: Give yourself the custom block
-    usage: /<command> [player] [amount]
+    description: Give DiscoveryLab custom block (different texture per type)
+    usage: /<command> <type> [player] [amount] | /<command> * for all
     permission: customblock.give
     permission-message: You don't have permission!
   customblock:
-    description: Main command
+    description: Main command - /cb types|list|info
     usage: /<command>
     aliases: [cb]
 

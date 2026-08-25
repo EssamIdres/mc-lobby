@@ -37,11 +37,11 @@ public class GUIManager implements Listener {
     // === OPEN GUIS ===
     public static void openMainGUI(Player player, Location blockLoc) {
         CustomBlockPlugin plugin = CustomBlockPlugin.getInstance();
-        GUIManager manager = plugin.getServer().getServicesManager().getRegistration(GUIManager.class) != null ? null : null;
-        // Alternative: get via instance
-        // We'll create inventory directly
-
-        Inventory inv = Bukkit.createInventory(null, 27, Component.text(MAIN_TITLE));
+        String typeId = plugin.getBlockTypeAt(blockLoc);
+        CustomBlockPlugin.BlockType def = plugin.getBlockTypeDef(typeId);
+        String title = "§8§l" + def.displayName.replace("§l","").replace("§d","").replace("§6","").replace("§e","").replace("§8","").replace("§7","").replace("§5","").replace("§c","").replace("§a","").replace("§f","").replace("§9","").replace("§b","").trim() + " §7- Menu";
+        // Keep generic title for click detection, but show typed
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text(def.displayName + " §7- Menu"));
 
         // Fill with gray glass
         ItemStack filler = createFiller();
@@ -80,20 +80,23 @@ public class GUIManager implements Listener {
         craft.setItemMeta(m2);
         inv.setItem(13, craft);
 
-        // Slot 15 - Info
+        // Slot 15 - Info (per-type)
+        String typeAt = plugin.getBlockTypeAt(blockLoc);
+        CustomBlockPlugin.BlockType infoDef = plugin.getBlockTypeDef(typeAt);
         ItemStack info = new ItemStack(Material.BOOK);
         ItemMeta m3 = info.getItemMeta();
         m3.displayName(Component.text("§a§lInformation"));
         m3.lore(List.of(
-                Component.text("§7Custom Block at:"),
-                Component.text("§f" + blockLoc.getBlockX() + "§7, §f" + blockLoc.getBlockY() + "§7, §f" + blockLoc.getBlockZ()),
+                Component.text("§7Block: " + infoDef.displayName + " §8(" + infoDef.id + ")"),
+                Component.text("§7CMD: §f" + infoDef.customModelData + " §7Mat: §f" + infoDef.material),
+                Component.text("§7At: §f" + blockLoc.getBlockX() + "§7, §f" + blockLoc.getBlockY() + "§7, §f" + blockLoc.getBlockZ()),
                 Component.text("§7World: §f" + blockLoc.getWorld().getName()),
                 Component.text(""),
-                Component.text("§7This is a §6custom block"),
-                Component.text("§7with its own storage."),
-                Component.text("§7Break it to get items back."),
+                Component.text("§7This is a §eDiscoveryLab§7 block"),
+                Component.text("§7with its own storage (new way)"),
+                Component.text("§7Break to get items back."),
                 Component.text(""),
-                Component.text("§8CustomBlockGUI v1.0.0")
+                Component.text("§8CustomBlockGUI v1.1.0")
         ));
         m3.getPersistentDataContainer().set(new NamespacedKey(plugin, "gui_action"), PersistentDataType.STRING, "info");
         info.setItemMeta(m3);
@@ -116,7 +119,8 @@ public class GUIManager implements Listener {
         openMenusStatic.put(player.getUniqueId(), blockLoc);
 
         player.openInventory(inv);
-        player.sendMessage("§7Opened §6Custom Machine §7menu §8(" + blockLoc.getBlockX() + "," + blockLoc.getBlockY() + "," + blockLoc.getBlockZ() + "§8)");
+        CustomBlockPlugin.BlockType openedDef = plugin.getBlockTypeDef(plugin.getBlockTypeAt(blockLoc));
+        player.sendMessage("§7Opened " + openedDef.displayName + " §7menu §8(" + blockLoc.getBlockX() + "," + blockLoc.getBlockY() + "," + blockLoc.getBlockZ() + "§8) §7CMD:" + openedDef.customModelData);
     }
 
     private static final Map<UUID, Location> openMenusStatic = new HashMap<>();
@@ -152,8 +156,8 @@ public class GUIManager implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(event.getView().title());
 
-        // Check if it's our GUI by title contains
-        boolean isMain = title.contains("Custom Machine") && title.contains("Menu");
+        // Check if it's our GUI by title contains (now per-type title contains " - Menu")
+        boolean isMain = title.contains(" - Menu") || title.contains("Custom Machine");
         boolean isStorage = title.contains("Custom Storage");
 
         if (!isMain && !isStorage) return;
@@ -203,12 +207,15 @@ public class GUIManager implements Listener {
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
             }
             case "info" -> {
+                String t = plugin.getBlockTypeAt(loc);
+                CustomBlockPlugin.BlockType d = plugin.getBlockTypeDef(t);
                 player.sendMessage("§a--- Custom Block Info ---");
+                player.sendMessage("§7Block: " + d.displayName + " §7(" + d.id + ") CMD:" + d.customModelData);
                 player.sendMessage("§7Location: §f" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
                 player.sendMessage("§7World: §f" + loc.getWorld().getName());
-                player.sendMessage("§7Type: §f" + CustomBlockPlugin.CUSTOM_BLOCK_MATERIAL);
-                player.sendMessage("§7Edit §eGUIManager.java §7to customize this GUI!");
-                player.sendMessage("§7Tip: Use resource pack with CustomModelData 1001 for custom texture.");
+                player.sendMessage("§7Texture: §f" + d.description);
+                player.sendMessage("§7Edit §eGUIManager.java §7to customize!");
+                player.sendMessage("§7Tip: Different texture per CustomModelData " + d.customModelData + " via DiscoveryLab pack");
             }
             case "close" -> player.closeInventory();
         }
@@ -232,11 +239,8 @@ public class GUIManager implements Listener {
             }
             // Keep menu location for possible return?
         }
-        if (title.contains("Custom Machine") && title.contains("Menu")) {
-            // Optional: clear menu cache after delay
+        if (title.contains(" - Menu")) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                // Don't remove immediately if they opened storage (storage will re-add)
-                // If not in storage, remove
                 if (!openStoragesStatic.containsKey(player.getUniqueId())) {
                     openMenusStatic.remove(player.getUniqueId());
                 }
