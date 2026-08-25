@@ -16,6 +16,14 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Build CustomBlockGUI plugin
+        run: |
+          cd plugin-src/CustomBlockGUI
+          mvn -B package
+          mkdir -p ../../plugins
+          cp target/CustomBlockGUI-*.jar ../../plugins/
+          ls -lh ../../plugins/
+
       - name: Install rclone
         run: |
           curl -fsSL -o /tmp/rclone.zip https://downloads.rclone.org/rclone-current-linux-amd64.zip
