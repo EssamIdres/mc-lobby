@@ -2,6 +2,12 @@
 
 Runs a free Minecraft (Paper) server on GitHub Actions.
 
+## Portfolio preview
+
+The repository root also contains a dependency-free static portfolio page in `index.html` with its styles in
+`styles.css`. Open `index.html` directly in a browser to preview it locally; replace the placeholder content and
+links before publishing.
+
 ## Setup (one time)
 
 1. In repo **Settings → Secrets and variables → Actions → New repository secret**:
